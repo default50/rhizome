@@ -13,3 +13,4 @@ class InputException(Exception):
         self.message = message
         if data is not None:
             self.data = data
+

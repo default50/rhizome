@@ -51,7 +51,6 @@ class SimpleDocTransform(DocTransform):
             .filter(content_type='location',\
                 source_object_code__in = csv_location_codes)\
             .values_list('source_object_code','master_object_id')
-                # source_object_code = 'AF0010390030000000002016')\
 
         for source_object_code, master_object_id in location_lookup:
             self.meta_lookup['location'][source_object_code] = master_object_id
@@ -81,7 +80,6 @@ class SimpleDocTransform(DocTransform):
 
         for row in SourceSubmission.objects.filter(document_id = \
             self.document.id):
-
             self.process_source_submission(row)
 
     def process_raw_source_submission(self, submission):
@@ -111,8 +109,6 @@ class SimpleDocTransform(DocTransform):
 
         dwc_batch, dwc_list_of_lists = [], []
         submission  = row.submission_json
-
-
         try:
             location_id = self.meta_lookup['location'][row.location_code]
             campaign_id = self.meta_lookup['campaign'][row.campaign_code]
@@ -133,7 +129,6 @@ class SimpleDocTransform(DocTransform):
         DataPointComputed.objects.bulk_create(dwc_batch)
 
     def process_submission_cell(self, location_id, campaign_id, k,v):
-
         try:
             indicator_id = self.meta_lookup['indicator'][k]
         except KeyError:
@@ -199,6 +194,22 @@ class SimpleDocTransform(DocTransform):
         try:
             ss = SourceSubmission.objects.bulk_create(object_list)
         except IntegrityError as e:
-            raise DatapointsException(e.message)
-
+            #parse the default message to generate a nicer message
+            if(e.message.startswith("null value")):
+                before_keyword, keyword, after_keyword = e.message.partition('column')
+                column = after_keyword.split()[0]
+                printMessage = "Your file contained a missing value for the column %s.\nPlease make sure all required fields are completed." %column
+            else:
+                printMessage = e.message
+            raise DatapointsException(printMessage)
         return
+
+class RowMapErrorException(Exception):
+    defaultMessage = "Invalid row!"
+    defaultCode = -1
+
+    def __init__(self, message=defaultMessage, code=defaultCode):
+        self.message = message
+        self.code = code
+
+
