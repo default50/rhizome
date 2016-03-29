@@ -31,16 +31,13 @@ class TransformUploadTestCase(TestCase):
         source submission table.  This method in context of this test represents
         what would happen when a user uploads a csv and the data flows through
         "etl_tasks/transform_upload"
-
         Uploading the csv to the server is itself a different task.. so for now
         we preform "transform_upload" on the test file.
-
         This method is in charge of one specific thing.. taking an input stream
         such as a csv, or an ODK submission, and creating one row in the
         database with the schema that it was received.  Later in the ingest
         process, users are allowed to specify settings to each file in order
         to translate them into data the application can consume and visualize.
-
         The Doc Transofrm Method is responsible for the following:
             1. Inserting one record into source_submission for each csv row
             2. Inserting any new mappings into source_object_map

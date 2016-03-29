@@ -1,16 +1,15 @@
 import gulp from 'gulp'
 
 const jsDestFolder = `${gulp.config('base.dist')}/static`
-var proManifest = jsDestFolder + '/rev-manifest.json'
+var proManifest =  jsDestFolder + '/rev-manifest.json'
 var devManifest = './rev-manifest.json'
 var manifestFile = (process.env.NODE_ENV === 'production') ? proManifest : devManifest
-var templateDir = '.././rhizome/templates'
 
 export default {
   files: [
     {
       'manifestFile': manifestFile,
-      'templates': templateDir,
+      'templates': `${gulp.config('templates')}`,
       'entry': jsDestFolder,
       'dest': jsDestFolder
     }

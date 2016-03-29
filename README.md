@@ -1,4 +1,4 @@
-test# Set up
+# Set up
 test
 ## Prerequisites
 

@@ -7,16 +7,13 @@ table {
   thead {
     tr {
       th {
-        color: $rhz-body-color;
+        color: $rhz-font-color;
         padding: 0.5rem 0.625rem 0.625rem;
         text-align: left;
         text-transform: uppercase;
-        font-family: proxima-bold;
+        background-color: $rhz-background-color;
         a {
-          color: $rhz-body-color;
-        }
-        .ds-data-table-sort-indicator {
-          position: absolute;
+          color: white;
         }
       }
     }
@@ -184,7 +181,6 @@ table {
 
     th {
       border-bottom: 1px solid $borderColor;
-      color: $rhz-body-color;
     }
 
     td {
@@ -197,7 +193,7 @@ table {
         font-size: 11px;
         background-color: #999;
         font-weight: 100;
-        color: white;
+        color: #fff;
         text-transform: uppercase;
       }
     }
@@ -261,8 +257,7 @@ $valueColumnWidth: 80px;
 .empty,
 .loading
 {
-  // background-color: #fafafa;
-  background-color: transparent;
+  background-color: #fafafa;
   color: #999;
   text-align: center;
   padding: 40px 0;

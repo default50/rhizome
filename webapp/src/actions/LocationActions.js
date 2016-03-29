@@ -2,7 +2,7 @@ import Reflux from 'reflux'
 import api from 'data/api'
 
 const LocationActions = Reflux.createActions({
-  'fetchLocations': { children: ['completed', 'failed'] }
+  'fetchLocations': { children: ['completed', 'failed'], asyncResult: true }
 })
 
 LocationActions.fetchLocations.listenAndPromise(() => {

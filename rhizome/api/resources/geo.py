@@ -37,6 +37,7 @@ class GeoResource(BaseNonModelResource):
         parse the url, query the polygons table and do some
         ugly data munging to convert the results from the DB into geojson
         '''
+
         features = []
 
         location_ids_to_return = self.get_locations_to_return_from_url(request)
@@ -59,6 +60,7 @@ class GeoResource(BaseNonModelResource):
         Outer method for get_object_list... this calls get_object_list and
         could be a point at which additional build_agg_rc_dfing may be applied
         '''
+
         return self.get_object_list(bundle.request)
 
     def dehydrate(self, bundle):

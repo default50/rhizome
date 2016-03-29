@@ -95,16 +95,8 @@ svg {
 
   .location {
     fill: $white;
-    stroke: $tuatara;
+    stroke: $oil;
     stroke-width: 1px;
-    &.country-path {
-      stroke-width: 2px;
-      stroke: $oil
-    }
-    &.province-path {
-      stroke-width: 2px;
-      stroke: $oil;
-    }
   }
 
   .clickable {

@@ -556,22 +556,13 @@ class SourceSubmission(models.Model):
     def get_location_id(self):
 
         try:
-            l_id = SourceObjectMap.objects.get(content_type = 'location',\
+            loc_id = SourceObjectMap.objects.get(content_type = 'location',\
                 source_object_code = self.location_code).master_object_id
         except ObjectDoesNotExist:
             loc_id = None
 
-        return l_id
+        return loc_id
 
-    def get_campaign_id(self):
-
-        try:
-            c_id = SourceObjectMap.objects.get(content_type = 'campaign',\
-                source_object_code = self.campaign_code).master_object_id
-        except ObjectDoesNotExist:
-            c_id = None
-
-        return c_id
 
 #===========================================================================#
 #                               DATAPOINT MODELS                            #
@@ -595,8 +586,7 @@ class DataPoint(models.Model):
 
     indicator = models.ForeignKey(Indicator)
     location = models.ForeignKey(Location)
-    campaign = models.ForeignKey(Campaign)
-    data_date = models.DateTimeField(null=True)
+    data_date = models.DateTimeField()
     value = models.FloatField(null=True)
     created_at = models.DateTimeField(auto_now=True)
     source_submission = models.ForeignKey(SourceSubmission)
@@ -616,8 +606,7 @@ class DocDataPoint(models.Model):
     document = models.ForeignKey(Document)  # redundant
     indicator = models.ForeignKey(Indicator)
     location = models.ForeignKey(Location)
-    campaign = models.ForeignKey(Campaign)
-    data_date = models.DateTimeField(null=True)
+    data_date = models.DateTimeField()
     value = models.FloatField(null=True)
     source_submission = models.ForeignKey(SourceSubmission)
     agg_on_location = models.BooleanField()

@@ -10,9 +10,11 @@ class CampaignResource(BaseModelResource):
     def get_detail(self, request, **kwargs):
         bundle = self.build_bundle(request=request)
         bundle.data = Campaign.objects.get(id=kwargs['pk']).__dict__
+
         return self.create_response(request, bundle)
 
     def get_object_list(self, request):
+
 
         if self.top_lvl_location_id == 4721: ## hack to get sherine off my back !
             qs = Campaign.objects.all()
@@ -20,19 +22,21 @@ class CampaignResource(BaseModelResource):
             qs = Campaign.objects.filter(\
                 top_lvl_location_id = self.top_lvl_location_id)
 
-        if 'id__in' in request.GET:
+        try:
             requested_ids = request.GET['id__in'].split(",")
             return qs.filter(id__in = requested_ids).values().order_by('-start_date')
-        else:
+        except:
             return qs.values().order_by('-start_date')
 
     def obj_create(self, bundle, **kwargs):
 
         post_data = bundle.data
 
-        if 'id' in post_data and post_data['id'] !=-1:
+        try:
             campaign_id = int(post_data['id'])
-        else:
+            if campaign_id == -1:
+                campaign_id = None
+        except KeyError:
             campaign_id = None
 
         try:

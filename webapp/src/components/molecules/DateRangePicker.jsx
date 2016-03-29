@@ -17,7 +17,7 @@ var DateRangePicker = React.createClass({
   },
 
   componentWillReceiveProps: function (nextProps) {
-    if (nextProps.fromComponent === 'DataExplorer') {
+    if (nextProps.fromComponent === 'ChartWizard') {
       this.setState({
         start: nextProps.start,
         end: nextProps.end

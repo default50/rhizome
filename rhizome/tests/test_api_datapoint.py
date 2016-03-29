@@ -1,4 +1,3 @@
-
 from django.test import TestCase
 from tastypie.test import ResourceTestCase
 from tastypie.models import ApiKey
@@ -43,7 +42,6 @@ class DataPointResourceTest(ResourceTestCase):
         result = self.api_client.client.login(username=self.username,
                                               password=self.password)
         return result
-
 
     def test_get_list(self):
         # Create the data, need input value to the DataPointComputed model.

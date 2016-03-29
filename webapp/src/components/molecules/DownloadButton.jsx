@@ -2,9 +2,8 @@ import React from 'react'
 
 var DownloadButton = React.createClass({
   propTypes: {
-    data: React.PropTypes.array,
     onClick: React.PropTypes.func.isRequired,
-    enable: React.PropTypes.bool,
+    enable: React.PropTypes.bool.isRequired,
     text: React.PropTypes.string.isRequired,
     cookieName: React.PropTypes.string.isRequired,
     working: React.PropTypes.string.isRequired,
@@ -62,14 +61,14 @@ var DownloadButton = React.createClass({
 
   render () {
     let text = this.state.isWorking ? this.props.working : this.props.text
-    let classesString = this.props.enable && !this.state.isWorking ? 'button success expand ' : 'button success expand disabled '
+    let classesString = this.props.enable && !this.state.isWorking ? 'button success ' : 'button success disabled '
     return (
-      <button role='button'
+      <a role='button'
         className={classesString + this.props.classes}
         onClick={this._download}>
-        <i className='fa fa-fw fa-download' /> {text}
+        <i className='fa fa-fw fa-download' />&emsp; {text}
         <iframe width='0' height='0' className='hidden' src={this.state.url}></iframe>
-      </button>
+      </a>
     )
   }
 })

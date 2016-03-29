@@ -11,7 +11,6 @@ var DatapointStore = Reflux.createStore({
 
   datapoints: {
     meta: null,
-    melted: null,
     raw: null
   },
 
@@ -25,48 +24,16 @@ var DatapointStore = Reflux.createStore({
 
   // ============================  Fetch  Datapoints  ========================== //
   onFetchDatapoints () {
-  console.info('--- DatapointsStore.onFetchDatapoints')
-    this.setState({ raw: null })
+    this.setState({ raw: [] })
   },
   onFetchDatapointsCompleted (response) {
-  console.info('--- DatapointsStore.onFetchDatapointsCompleted')
     this.setState({
       meta: response.meta,
-      raw: response.objects,
-      melted: _(response.objects)
-        .flatten()
-        .sortBy(_.method('campaign.start_date.getTime'))
-        .map(this.melt)
-        .flatten()
-        .value()
+      raw: response.objects
     })
   },
-
   onFetchDatapointsFailed (error) {
-  console.info('--- DatapointsStore.onFetchDatapointsFailed')
     this.setState({ error: error })
-  },
-
-  // =========================================================================== //
-  //                            REGULAR ACTION HANDLERS                          //
-  // =========================================================================== //
-  onClearDatapoints () {
-    console.info('--- DatapointsStore.onClearDatapoints')
-    this.setState({ meta: null, melted: null, raw: null })
-  },
-
-  // =========================================================================== //
-  //                                  UTILITIES                                  //
-  // =========================================================================== //
-  melt (datapoint) {
-    var base = _.omit(datapoint, 'indicators')
-    return datapoint.indicators.map(indicator => {
-      return _.assign({
-        computed: indicator.computed,
-        indicator: indicator.indicator,
-        value: indicator.value
-      }, base)
-    })
   }
 })
 

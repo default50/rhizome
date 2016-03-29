@@ -11,30 +11,23 @@ var RegionTitleMenu = React.createClass({
     sendValue: React.PropTypes.func.isRequired
   },
 
-  getInitialState () {
+  getInitialState: function () {
     return {
       pattern: ''
     }
   },
 
-  getDefaultProps () {
-    return {
-      locations: [],
-      selected: {'name':'Loading ...'}
-    }
-  },
-
-  shouldComponentUpdate (nextProps, nextState) {
+  shouldComponentUpdate: function (nextProps, nextState) {
     return nextProps.locations.length !== this.props.locations.length ||
       nextProps.selected.id !== this.props.selected.id
   },
 
-  _setPattern (value) {
+  _setPattern: function (value) {
     this.setState({ pattern: value })
     this.forceUpdate()
   },
 
-  _buildLocations (original_locations, pattern) {
+  _buildLocations: function (original_locations, pattern) {
     var locations = original_locations.map(r => {
       return {
         title: r.name,
@@ -66,7 +59,7 @@ var RegionTitleMenu = React.createClass({
     return locations
   },
 
-  render () {
+  render: function () {
     var locations = this._buildLocations(this.props.locations, this.state.pattern)
     var menu_item_components = MenuItem.fromArray(_.sortBy(locations, 'title'), this.props.sendValue)
 

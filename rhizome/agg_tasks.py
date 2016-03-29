@@ -30,7 +30,6 @@ class AggRefresh(object):
         '''
         If there is a job running, return to with a status code of
         "cache_running".
-
         If passed an explicit list of datapoints ids, then we process those
         other wise the datapoint IDs to process are handled in the set_up()
         method.
@@ -119,18 +118,15 @@ class AggRefresh(object):
         '''
         Regional Aggregation based on the adjacency list built on top of the
         parent_location_id column.
-
         Data stored in the DataPoint table for a location with the same
         indicator, campaign will always override the aggregated values, that is
         if the indicator is an integer ( summing percents and booleans
         regionally doesnt make sense.)
-
         Here, we create a tuple_dict in which the unique key of (locaiton,
         indicator, campaign) represents the key, and the cooresponding value
         is the value.  This way we add to the dict the aggregated values, then
         iterrate through the raw values, adding or updating the data in the
         tuple dict before bulk inserting the data.
-
         The tuple looks like:  {(1, 201, 164): 12, (2, 101, 168): .24}
         '''
 
@@ -213,10 +209,8 @@ class AggRefresh(object):
         in a state that all of the rows that were altered, and need to be cached
         thats is the ``calc_refreshed`` column will = 'f' for all of the rows
         that this task effected.
-
         To find out more about how calculation works, take a look at the
         fn_calc_datapoint stored procedures
-
         '''
 
         ## the order of these calculations defines their priority, meaning
@@ -264,14 +258,10 @@ class AggRefresh(object):
         TO DO -- handle test_recursive_sum test case
         This only handles one level of recursion.. i.e. the following calc will
         roll up properly.
-
         "odk missed due to refusal" >> "odk missed total"
-
         but this one below.. will not:
-
         "odk missed due to refusal -- male" >> "odk missed due to refusal" >>
         "odk missed total"
-
         '''
 
         lvl_1_calc_df =  initial_calc_df.merge(initial_calc_df,\
@@ -306,7 +296,6 @@ class AggRefresh(object):
         '''
         For more info on this see:
         https://github.com/unicef/rhizome/blob/master/docs/spec.rst#aggregation-and-calculation
-
         '''
 
         ## get the indicator_ids we need to make the calculation ##

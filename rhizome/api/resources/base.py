@@ -66,13 +66,10 @@ class BaseResource(Resource):
         This method is used in both the /geo and /datapoint endpoints.  Based
         on the values parsed from the URL parameters find the locations needed
         to fulfill the request based on the four rules below.
-
         1. location_id__in =
         2. parent_location_id__in =
-
         right now -- this only filters if there is no param.. i should get the
         permitted locations first then do an intersection with the params..
-
         THIS IS A HOT MESS - NEED CLEAN UP
         '''
 

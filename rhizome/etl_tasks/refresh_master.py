@@ -1,5 +1,4 @@
 import locale
-from django.utils import timezone
 
 from collections import defaultdict
 import json
@@ -33,22 +32,22 @@ class MasterRefresh(object):
         self.db_doc_deets = self.get_document_config()
         self.source_map_dict = self.get_document_meta_mappings()
 
+        self.to_process_ss_ids = SourceSubmission.objects\
+                .filter(document_id = self.document_id,\
+                    process_status='TO_PROCESS')
+
+        self.location_codes_to_process = SourceSubmission\
+            .objects.filter(id__in = self.to_process_ss_ids)\
+            .values_list('location_code',flat = True).distinct()\
+            [:self.ss_location_code_batch_size]
+
         self.file_header = Document.objects.get(id=self.document_id).file_header
 
-        # self.to_process_ss_ids = SourceSubmission.objects\
-        #         .filter(document_id = self.document_id,\
-        #             process_status='TO_PROCESS')
+        self.ss_ids_to_process, self.all_ss_ids =\
+            self.refresh_submission_details()
 
-        # self.location_codes_to_process = SourceSubmission\
-        #     .objects.filter(id__in = self.to_process_ss_ids)\
-        #     .values_list('location_code',flat = True).distinct()\
-        #     [:self.ss_location_code_batch_size]
-
-        # self.ss_ids_to_process, self.all_ss_ids =\
-        #     self.refresh_submission_details()
-        #
-        # self.submission_data = dict(SourceSubmission.objects.filter(id__in = \
-        #     self.ss_ids_to_process).values_list('id','submission_json'))
+        self.submission_data = dict(SourceSubmission.objects.filter(id__in = \
+            self.ss_ids_to_process).values_list('id','submission_json'))
 
     ## __init__ HELPER METHOD ##
 
@@ -92,6 +91,7 @@ class MasterRefresh(object):
         ## during the DocTransform process we associate new AND existing mappings between
         ## the metadata assoicated with this doucment.
 
+
         sm_ids = DocumentSourceObjectMap.objects.filter(document_id =\
             self.document_id).values_list('source_object_map_id',flat=True)
 
@@ -111,58 +111,61 @@ class MasterRefresh(object):
 
     def main(self):
 
-        # if len(self.ss_ids_to_process) == 0:
-        #     return
+        if len(self.ss_ids_to_process) == 0:
+            return
 
         self.refresh_submission_details()
         self.submissions_to_doc_datapoints()
         self.delete_unmapped()
         self.sync_datapoint()
-        # self.mark_datapoints_with_needs_campaign()
+        self.mark_datapoints_with_needs_campaign()
 
-    # def mark_datapoints_with_needs_campaign(self):
-    #
-    #     new_dp_df = DataFrame(list(DataPoint.objects\
-    #         .filter(source_submission_id__in = \
-    #             self.ss_ids_to_process).values()))
-    #
-    #     date_series = new_dp_df['data_date']
-    #     mn_date, mx_date = min(date_series).date(), max(date_series).date()
-    #
-    #     office_lookup_df = DataFrame(list(Location.objects\
-    #         .filter(id__in = list(set(new_dp_df['location_id'])))\
-    #         .values_list('id','office_id')), \
-    #          columns = ['location_id', 'office_id'])
-    #
-    #     campaign_qs = Campaign.objects.filter(
-    #         end_date__gte = mn_date, start_date__lte = mx_date,
-    #         office_id__in = office_lookup_df\
-    #         ['office_id'].unique())
-    #
-    #     campaign_df = DataFrame(list(campaign_qs\
-    #         .values('office_id','start_date','end_date')))
-    #
-    #     if len(campaign_df) == 0:
-    #         ## no campaigns match the datapoitns so update all with cj_id = -2
-    #         DataPoint.objects.filter(id__in=new_dp_df['id'].unique())\
-    #             .update(cache_job_id = -2)
-    #         return
-    #
-    #     dp_merged_df = new_dp_df.merge(office_lookup_df)
-    #     cleaned_dp_df = dp_merged_df[['id','office_id','data_date']]
-    #
-    #     dp_ids_that_need_campaign = []
-    #     dp_merged_with_campaign = cleaned_dp_df.merge(campaign_df)
-    #
-    #     ## iterrate over the dps and check if there is a campaign ##
-    #     for ix, r in dp_merged_with_campaign.iterrows():
-    #         ## convert date time to date
-    #         r_date = r.data_date.date()
-    #         if r_date >= r.end_date or r_date < r.start_date:
-    #             dp_ids_that_need_campaign.append(r.id)
-    #
-    #     DataPoint.objects.filter(id__in=dp_ids_that_need_campaign)\
-    #         .update(cache_job_id = -2)
+        SourceSubmission.objects.filter(id__in = self.ss_ids_to_process)\
+            .update(process_status = 'PROCESSED')
+
+    def mark_datapoints_with_needs_campaign(self):
+
+        new_dp_df = DataFrame(list(DataPoint.objects\
+            .filter(source_submission_id__in = \
+                self.ss_ids_to_process).values()))
+
+        date_series = new_dp_df['data_date']
+        mn_date, mx_date = min(date_series).date(), max(date_series).date()
+
+        office_lookup_df = DataFrame(list(Location.objects\
+            .filter(id__in = list(set(new_dp_df['location_id'])))\
+            .values_list('id','office_id')), \
+             columns = ['location_id', 'office_id'])
+
+        campaign_qs = Campaign.objects.filter(
+            end_date__gte = mn_date, start_date__lte = mx_date,
+            office_id__in = office_lookup_df\
+            ['office_id'].unique())
+
+        campaign_df = DataFrame(list(campaign_qs\
+            .values('office_id','start_date','end_date')))
+
+        if len(campaign_df) == 0:
+            ## no campaigns match the datapoitns so update all with cj_id = -2
+            DataPoint.objects.filter(id__in=new_dp_df['id'].unique())\
+                .update(cache_job_id = -2)
+            return
+
+        dp_merged_df = new_dp_df.merge(office_lookup_df)
+        cleaned_dp_df = dp_merged_df[['id','office_id','data_date']]
+
+        dp_ids_that_need_campaign = []
+        dp_merged_with_campaign = cleaned_dp_df.merge(campaign_df)
+
+        ## iterrate over the dps and check if there is a campaign ##
+        for ix, r in dp_merged_with_campaign.iterrows():
+            ## convert date time to date
+            r_date = r.data_date.date()
+            if r_date >= r.end_date or r_date < r.start_date:
+                dp_ids_that_need_campaign.append(r.id)
+
+        DataPoint.objects.filter(id__in=dp_ids_that_need_campaign)\
+            .update(cache_job_id = -2)
 
     def delete_unmapped(self):
         ## if a user re-maps data, we need to delete the
@@ -181,17 +184,17 @@ class MasterRefresh(object):
 
         ## delete bad_indicator_data ##
         DataPoint.objects.filter(
-            source_submission_id__document_id = self.document_id,
+            source_submission_id__in = self.ss_ids_to_process,
         ).exclude(indicator_id__in=som_lookup['indicator']).delete()
 
         ## delete bad_location_data ##
         DataPoint.objects.filter(
-            source_submission_id__document_id = self.document_id,
+            source_submission_id__in = self.ss_ids_to_process,
         ).exclude(location_id__in=som_lookup['location']).delete()
 
         ## delete bad_campaign_data ##
         DataPoint.objects.filter(
-            source_submission_id__document_id = self.document_id,
+            source_submission_id__in = self.ss_ids_to_process,
         ).exclude(location_id__in=som_lookup['campaign']).delete()
 
 
@@ -212,18 +215,21 @@ class MasterRefresh(object):
         ## find soure_submission_ids based of location_codes to process
         ## then get the json of all of the related submissions .
         submission_qs = SourceSubmission.objects\
-            .filter(document_id = self.document_id)
+            .filter(document_id = self.document_id,
+                location_code__in = self.location_codes_to_process,
+                process_status = 'TO_PROCESS')
 
         for submission in submission_qs:
             all_ss_ids.append(submission.id)
 
+            ## need to remove this! shoudl not have a FK between the two
+            ## apps.. source_data and datapoint
+
             location_id = submission.get_location_id()
-            campaign_id = submission.get_campaign_id()
 
             if location_id > 0:
                 ss_id_list_to_process.append(submission.id)
                 submission.location_id = location_id
-                submission.campaign_id = campaign_id
 
         if len(submission_qs) > 0:
             bulk_update(submission_qs)
@@ -235,48 +241,35 @@ class MasterRefresh(object):
         Send all rows queued for processing to the process_source_submission method.
         '''
 
-        # ss_ids_in_batch = self.submission_data.keys()
+        ss_ids_in_batch = self.submission_data.keys()
 
-        for row in SourceSubmission.objects.filter(document_id = self.document_id):
-
+        for row in SourceSubmission.objects.filter(id__in = ss_ids_in_batch):
             row.location_id = row.get_location_id()
-            row.campaign_id = row.get_campaign_id()
-            ## if no mapping for campaign / location -- dont process
-            if row.campaign_id == -1:
-                row.process_status = 'missing campaign'
-            elif row.location_id == -1:
-                row.process_status = 'missing location'
-            else:
-                doc_dps = self.process_source_submission(row)
+
+            doc_dps = self.process_source_submission(row)
 
     def sync_datapoint(self, ss_id_list = None):
 
         dp_batch = []
 
         if not ss_id_list:
-            ss_id_list = SourceSubmission.objects\
-                .filter(document_id = self.document_id).values_list('id',flat=True)
+            ss_id_list = self.submission_data.keys()
+
 
         doc_dp_df = DataFrame(list(DocDataPoint.objects.filter(
-            document_id = self.document_id).values()))
-
-        if len(doc_dp_df) == 0:
-            return
+            source_submission_id__in = ss_id_list).values()))
 
         location_ids = doc_dp_df['location_id'].unique()
         indicator_ids = doc_dp_df['indicator_id'].unique()
-        campaign_ids = doc_dp_df['campaign_id'].unique()
-
-        # min_date, max_date = doc_dp_df['data_date'].min(),\
-        #     doc_dp_df['data_date'].max()
+        min_date, max_date = doc_dp_df['data_date'].min(),\
+            doc_dp_df['data_date'].max()
 
         pontential_conflict_doc_dp_df = DataFrame(list(DocDataPoint\
             .objects.filter(
                 indicator_id__in = indicator_ids,
                 location_id__in = location_ids,
-                campaign_id__in = campaign_ids
-                # data_date__gte = min_date,
-                # data_date__lte = max_date,
+                data_date__gte = min_date,
+                data_date__lte = max_date,
             ).values()))
 
         full_dp_df = concat([doc_dp_df,pontential_conflict_doc_dp_df])
@@ -303,7 +296,6 @@ class MasterRefresh(object):
                 dp_batch.append(DataPoint(**{
                     'indicator_id' : row.indicator_id,
                     'location_id' : row.location_id,
-                    'campaign_id' : row.campaign_id,
                     'data_date' : row.data_date,
                     'value' : row.value,
                     'source_submission_id' : row.source_submission_id,
@@ -321,47 +313,41 @@ class MasterRefresh(object):
         doc_dp_batch = []
         submission  = row.submission_json
 
-        data_date = timezone.now().date()
-
         for k,v in submission.iteritems():
 
-            doc_dp = self.source_submission_cell_to_doc_datapoint(row, k, v, \
-                data_date)
+            doc_dp = self.source_submission_row_to_doc_datapoints(k,v,row.location_id,\
+                row.data_date,row.id)
             if doc_dp:
                 doc_dp_batch.append(doc_dp)
 
         DocDataPoint.objects.filter(source_submission_id=row.id).delete()
         DocDataPoint.objects.bulk_create(doc_dp_batch)
 
-    def source_submission_cell_to_doc_datapoint(self, row, indicator_string, \
-            value, data_date):
+    def source_submission_row_to_doc_datapoints(self, ind_str, val, location_id, \
+        data_date, ss_id):
         '''
         This method prepares a batch insert into docdatapoint by creating a list of
         DocDataPoint objects.  The Database handles all docdatapoitns in a submission
         row at once in process_source_submission.
         '''
 
-        ## if i can't clean the value, i.e. its a string not a number, dont process
-
         try:
-            cleaned_val = self.clean_val(value)
+            cleaned_val = self.clean_val(val)
         except ValueError:
             return None
 
-        ## it no indicator row dont process ##
         try:
-            indicator_id = self.source_map_dict[('indicator',indicator_string)]
+            indicator_id = self.source_map_dict[('indicator',ind_str)]
         except KeyError:
             return None
 
         doc_dp = DocDataPoint(**{
                 'indicator_id':  indicator_id,
                 'value': cleaned_val,
-                'location_id': row.location_id,
-                'campaign_id': row.campaign_id,
+                'location_id': location_id,
                 'data_date': data_date,
                 'document_id': self.document_id,
-                'source_submission_id': row.id,
+                'source_submission_id': ss_id,
                 'agg_on_location': True,
             })
 

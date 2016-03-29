@@ -7,7 +7,7 @@ export default {
     {
       'title': 'tableData',
       'type': 'TableChart',
-      'indicators': [4, 28, 9, 11, 20, 8, 10, 22, 24, 6],
+      'indicators': [28, 9, 11, 20, 8, 10, 22, 24, 6, 4],
       'groupBy': 'indicator',
       'timeRange': {
         months: 0
@@ -17,8 +17,6 @@ export default {
     }, {
       'title': 'trendData',
       'type': 'LineChart',
-      'locations': 'sublocations',
-      'groupBy': 'location',
       'indicators': [4],
       'timeRange': {
         months: 12

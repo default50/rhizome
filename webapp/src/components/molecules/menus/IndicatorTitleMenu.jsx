@@ -21,7 +21,7 @@ var IndicatorTitleMenu = React.createClass({
     return {
       indicators: [],
       idsToRender: [],
-      selected: {'name':'Loading ...'}
+      selected: {'name':'Loading'}
     }
   },
 
@@ -39,15 +39,15 @@ var IndicatorTitleMenu = React.createClass({
 
   filteredMenuItems () {
     if (this.state.pattern.length > 2) {
-      return this.indicators.filter(indicator => {
+      return this.props.indicators.filter(indicator => {
         return new RegExp(this.state.pattern, 'i').test(indicator.name)
       })
     } else {
-      return this.indicators
+      return this.props.indicators
     }
   },
   render () {
-    this.indicators = this.indicatorsFilteredBySet()
+    this.props.indicators = this.indicatorsFilteredBySet()
     const indicator_menu_items = this.filteredMenuItems().map(indicator =>
       <TitleMenuItem
         key={'indicator-' + indicator.id}

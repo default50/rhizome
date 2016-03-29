@@ -35,8 +35,8 @@ var DataBrowserTableStore = Reflux.createStore({
     return schema
   },
 
-  _extractItemsFromData: function (datapoints) {
-    return datapoints.map(item => {
+  _extractItemsFromData: function (data) {
+    return data.objects.map(item => {
       let result = _.pick(item, 'location')
       result.campaign = moment(item.campaign.start_date).format('MMM YYYY')
       result.location_id = item.location
@@ -54,8 +54,8 @@ var DataBrowserTableStore = Reflux.createStore({
 
   _getPickValue: function (items, locations) {
     let pickValue = []
-    items.forEach(item => {
-      locations.forEach(location => {
+    _.forEach(items, item => {
+      _.forEach(locations, location => {
         if (item.location === location.id) {
           item.location = location.name
           pickValue.push(item)
@@ -66,10 +66,13 @@ var DataBrowserTableStore = Reflux.createStore({
     return pickValue
   },
 
-  onGetTableData: function (locations, indicators, datapoints) {
+  onGetTableData: function (locations, indicators, apiResponseData) {
+    this.table = {data: null, schema: null, fields: null, columns: null}
+    this.trigger(this.table)
+
     let fields = {location: {title: 'Location', name: 'location'}, campaign: {title: 'Campaign', name: 'campaign'}}
     let columns = ['location', 'campaign']
-    let items = this._extractItemsFromData(datapoints)
+    let items = this._extractItemsFromData(apiResponseData)
 
     indicators.forEach(indicator => {
       fields[indicator.id] = {title: indicator.name, name: indicator.id, 'computed': indicator.computed}
@@ -77,7 +80,7 @@ var DataBrowserTableStore = Reflux.createStore({
     })
 
     this.table.data = this._getPickValue(items, locations)
-    this.table.schema = this._buildSchema(parseSchema(datapoints), fields)
+    this.table.schema = this._buildSchema(parseSchema(apiResponseData), fields)
     this.table.fields = fields
     this.table.columns = columns
 
