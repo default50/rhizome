@@ -721,3 +721,57 @@ class AggRefreshTestCase(TestCase):
         ).value
 
         self.assertEqual(sub_2_target_val,sub_2_actual_val)
+
+    def _boolean_aggregation(self):
+
+        ## create a boolean indicato
+        boolean_indicator = Indicator.objects.create(
+            name = 'Is Controlled by "Anti Governemnt Elements"',
+            short_name = 'Is at War',
+            data_format = 'bool'
+        )
+
+        ## find the locations for which we should store raw data.. For instance
+        ## if it is 'district is at war', then we dont expect data stored at
+        ## the porivnce level.  Here though, we get all children of a particluar
+        ## parent.
+        location_ids = Location.objects.filter(parent_location_id=\
+            self.top_lvl_location_id).values_list('id',flat=True)
+
+        ## split the data into 1 value being fale, the rest being trye.
+        ## this aludes to the fact that the parent location shoul dhave a value
+        ## that is somethign like [ 1 / data.length() ]
+
+        false_loc_id = location_ids[0]
+        true_loc_id_list = location_ids[1:]
+
+        ## create the true and false datapoints ##
+        false_datapoint = DataPoint.objects.create(
+            campaign_id = self.campaign_id,
+            location_id = false_loc_id,
+            indicator_id = boolean_indicator.id,
+            value = 0
+        )
+
+        true_datapoint_batch = [DataPoint(**{
+            'campaign_id': self.campaign_id,
+            'location_id': loc,
+            'indicator_id': boolean_indicator.id,
+            'value': 1
+        }) for loc in true_loc_id_list]
+        DataPoint.objects.bulk_create(true_datapoint_batch)
+
+        ## run the agg refresh ( this is the code that will actually transofrm
+        ## the booleans to numerics. )
+        ar = AggRefresh()
+
+        ## now get the expected aggrgated data and compare it with the percentage
+        ## value that we expect given how we split up the locations above.
+        dwc_value = datapoint_with_computed.objects.filter(
+            location_id = self.top_lvl_location_id,
+            campaign_id = self.camapign_id,
+            indicator = boolean_indicator.id
+        ).value
+
+        expected_value = 1 - ( 1 / len(location_ids))
+        self.assertEqual(expected_value)
