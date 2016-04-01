@@ -155,6 +155,18 @@ class AggRefresh(object):
         ## join the location tree to the datapoints
         joined_location_df = no_nan_dp_df.merge(location_tree_df)
 
+        # print location_tree_df
+
+        location_tree_df_all = DataFrame(list(LocationTree.objects.all().values_list(*location_tree_columns)),columns=location_tree_columns)
+
+        print location_tree_df_all
+        # print list(Location.objects\
+        #     .filter(id__in=list(location_tree_df['location_id'].unique())).values_list('id', 'location_type'))
+
+        locations_df = DataFrame(list(Location.objects\
+            .filter(id__in=list(location_tree_df['location_id'].unique()))
+            .values_list('id')),columns='id')
+
         ## filter the joined dataframe so that we aggregate at the highest
         ## level for which there is stored data.  If we do not do this, then
         ## if we ingest both, district and province level data, the national
@@ -186,6 +198,9 @@ class AggRefresh(object):
             .merge(max_location_lvl_for_indicator_df,on=['indicator_id','lvl'])
 
         prepped_df['value'] = prepped_df['value'].astype(float)
+
+        print 'prepped_df'
+        print prepped_df
         ## group by parent_location_id and take the sum ##
         grouped_df_sum = DataFrame(prepped_df\
             .groupby(['parent_location_id', 'indicator_id'])\
@@ -194,6 +209,8 @@ class AggRefresh(object):
         grouped_df_mean = DataFrame(prepped_df\
             .groupby(['parent_location_id', 'indicator_id'])\
             ['value'].mean())
+
+
 
         for ix, dp in grouped_df_sum.iterrows():
             ## only aggregate integers ( not boolean or pct )
