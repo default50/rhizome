@@ -207,6 +207,15 @@ class Indicator(models.Model):
         db_table = 'indicator'
         ordering = ('name',)
 
+class IndicatorDataFormat(models.Model):
+        location_type = models.ForeignKey(LocationType)
+        indicator = models.ForeignKey(Indicator)
+        data_format = models.CharField(max_length=10)
+
+        class Meta:
+            db_table = 'indicator_data_format'
+            unique_together = ('location_type', 'indicator')
+
 class CalculatedIndicatorComponent(models.Model):
     '''
     The indicator is for example "pct missed due to refusal," the component

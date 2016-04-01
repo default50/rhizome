@@ -174,6 +174,13 @@ class AggRefresh(object):
             id__in = max_location_lvl_for_indicator_df['indicator_id']
         ).values_list('id', flat=True))
 
+        indicators_defined_by_level = IndicatorDataFormat.objects.all().values_list()
+
+        print 'indicators_defined_by_level'
+        print indicators_defined_by_level
+
+        indicator_data_formats = IndicatorDataFormat.objects.all()
+
         ## filter df to keep the data for the highest level per indicator ##
         prepped_df = joined_location_df\
             .merge(max_location_lvl_for_indicator_df,on=['indicator_id','lvl'])

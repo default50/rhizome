@@ -2,13 +2,12 @@ from django.contrib.auth.models import User
 from pandas import read_csv, notnull
 from numpy import nan, isnan
 from django.test import TestCase
-
 from rhizome.models import *
-
+from django.core.exceptions import ObjectDoesNotExist
 from rhizome.agg_tasks import AggRefresh
 from rhizome.cache_meta import LocationTreeCache
 from setup_helpers import TestSetupHelpers
-
+import random
 
 class AggRefreshTestCase(TestCase):
 
@@ -864,3 +863,54 @@ class AggRefreshTestCase(TestCase):
 
         expected_value = 1 - ( 1.0 / len(locations))
         self.assertEqual(expected_value, dwc_value)
+
+    def test_indicator_data_format(self):
+
+        lpd_indicator = Indicator.objects.create(
+            name = 'LPD status',
+            short_name = 'LPD',
+            data_format = 'int'
+        )
+        location_lvl = LocationType.objects.get(name='province').admin_level
+
+        indicator_d_format = IndicatorDataFormat.objects.create(
+                indicator_id = lpd_indicator.id,
+                location_type_id = location_lvl,
+                data_format = 'int'
+        ) 
+
+        for level in range(0, location_lvl):
+            IndicatorDataFormat.objects.create(
+                    indicator_id = lpd_indicator.id,
+                    location_type_id = level,
+                    data_format = 'na'
+            )
+
+        locations = Location.objects.filter(parent_location_id=\
+            self.top_lvl_location.id)
+
+        random.seed(12345)
+        sum =0
+        for location in locations:
+            lpd_val = random.randrange(1, 10)
+            sum += lpd_val
+            DataPoint.objects.create(
+                campaign_id = self.campaign_id,
+                location_id = location.id,
+                indicator_id = lpd_indicator.id,
+                source_submission_id = self.ss,
+                value = lpd_val
+            )
+
+        ar = AggRefresh(self.campaign_id)
+
+        try:
+            dwc_value = DataPointComputed.objects.get(
+                location_id = self.top_lvl_location.id,
+                campaign_id = self.campaign_id,
+                indicator = lpd_indicator.id
+            ).value
+            self.fail('datapoint should not exist')
+        except ObjectDoesNotExist:
+            pass
+
